@@ -42,6 +42,20 @@ TOOL_DEFS = [
         },
     },
     {
+        "name": "read_design_system",
+        "description": (
+            "Read the MISA Design System reference file (design.md). "
+            "Call this after reading the spec to load exact token values: "
+            "colors, spacing, typography, border radius, component sizes, and layout constants. "
+            "Always consult this before designing any frame so every element uses the correct token."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
         "name": "get_figma_file_info",
         "description": (
             "Fetch metadata about the Figma file: its name, pages, and existing "
@@ -372,10 +386,19 @@ def _save_design_report(
 # Dispatcher
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _read_design_system() -> str:
+    p = Path("design.md")
+    if not p.exists():
+        return "Error: design.md not found. Make sure it exists in the project root."
+    return p.read_text(encoding="utf-8")
+
+
 def execute_tool(name: str, tool_input: dict) -> str:
     """Route a tool call from Claude to the correct Python function."""
     if name == "read_spec":
         return _read_spec(tool_input.get("path", "spec.md"))
+    if name == "read_design_system":
+        return _read_design_system()
     if name == "get_figma_file_info":
         return _get_figma_file_info()
     if name == "plan_ux_flows":

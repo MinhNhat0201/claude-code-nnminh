@@ -123,10 +123,10 @@ export function BookShelf({
                                     userSelect: "none",
                                     position: "relative",
                                     transformOrigin: "left center",
-                                    // preserve-3d so child face divs live in the same 3D space
                                     transformStyle: "preserve-3d",
-                                    // drop-shadow respects 3D geometry; box-shadow does not
-                                    filter: "drop-shadow(4px 18px 28px rgba(0,0,0,0.55))",
+                                    // ⚠️ NO filter here — filter creates a stacking context
+                                    // that flattens preserve-3d children (same bug as overflow:hidden).
+                                    // Shadow is on the spine face child div instead.
                                 }}
                             >
                                 {/* ── SPINE FACE (front) ──────────────────────── */}
@@ -144,6 +144,8 @@ export function BookShelf({
                                     alignItems: "center",
                                     justifyContent: "center",
                                     overflow: "hidden",
+                                    // Shadow lives here — NOT on the preserve-3d container above
+                                    boxShadow: "4px 18px 32px rgba(0,0,0,0.55), -1px 0 6px rgba(0,0,0,0.2)",
                                 }}>
                                     <span style={{
                                         writingMode: "vertical-rl",
@@ -188,8 +190,10 @@ export function BookShelf({
                                 }} />
 
                                 {/* ── TOP CAP (top of book) ───────────────────
-                                    rotateX(-90°) from top edge → face lies in XZ
-                                    plane. Visible as a thin dark strip on top.    */}
+                                    rotateX(90°) from top edge: normal rotates
+                                    from +Z to -Y (upward). World-space normal
+                                    after shelf tilt ≈ upward+slightly toward viewer
+                                    → visible as a horizontal dark strip on top.   */}
                                 <div style={{
                                     position: "absolute",
                                     top: 0,
@@ -199,10 +203,10 @@ export function BookShelf({
                                     background: `linear-gradient(
                                         to bottom,
                                         ${darken(color, 5)} 0%,
-                                        ${darken(color, 18)} 100%
+                                        ${darken(color, 20)} 100%
                                     )`,
                                     transformOrigin: "top center",
-                                    transform: "rotateX(-90deg)",
+                                    transform: "rotateX(90deg)",
                                     borderRadius: "2px 2px 0 0",
                                 }} />
                             </motion.div>

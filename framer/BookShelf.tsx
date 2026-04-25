@@ -6,16 +6,15 @@ const SPINE_COLORS = [
     "#1B2A4A", "#C9A84C", "#D4C5A9", "#7B2D3E",
     "#2D5A3D", "#C4704A", "#5C6B3A", "#4A5568", "#F5F0E8",
 ]
-
 const SPINE_HEIGHTS = [220, 195, 240, 180, 215, 200, 235, 190, 210]
 
 const DEMO_BOOKS = [
-    { id: "d1", title: "Atomic Habits",               author: "James Clear",     status: "Finished",     genre: "Self-help",   spineColor: "#1B2A4A", notes: "Tiny changes, remarkable results." },
-    { id: "d2", title: "The Design of Everyday Things", author: "Don Norman",    status: "Finished",     genre: "Design",      spineColor: "#7B2D3E", notes: "Why design matters." },
-    { id: "d3", title: "Thinking, Fast and Slow",     author: "Daniel Kahneman", status: "Reading",      genre: "Psychology",  spineColor: "#2D5A3D", notes: "Two systems of thinking." },
-    { id: "d4", title: "Deep Work",                   author: "Cal Newport",     status: "Finished",     genre: "Productivity",spineColor: "#C9A84C", notes: "Focus is the new IQ." },
-    { id: "d5", title: "Dune",                        author: "Frank Herbert",   status: "Want to Read", genre: "Fiction",     spineColor: "#C4704A", notes: "A universe awaits." },
-    { id: "d6", title: "Show Your Work",              author: "Austin Kleon",    status: "Finished",     genre: "Creativity",  spineColor: "#5C6B3A", notes: "Share your creative process." },
+    { id: "d1", title: "Atomic Habits",                author: "James Clear",     status: "Finished",     genre: "Self-help",    spineColor: "#1B2A4A", notes: "Tiny changes, remarkable results." },
+    { id: "d2", title: "The Design of Everyday Things", author: "Don Norman",      status: "Finished",     genre: "Design",       spineColor: "#7B2D3E", notes: "Why design matters." },
+    { id: "d3", title: "Thinking, Fast and Slow",      author: "Daniel Kahneman", status: "Reading",      genre: "Psychology",   spineColor: "#2D5A3D", notes: "Two systems of thinking." },
+    { id: "d4", title: "Deep Work",                    author: "Cal Newport",     status: "Finished",     genre: "Productivity", spineColor: "#C9A84C", notes: "Focus is the new IQ." },
+    { id: "d5", title: "Dune",                         author: "Frank Herbert",   status: "Want to Read", genre: "Fiction",      spineColor: "#C4704A", notes: "A universe awaits." },
+    { id: "d6", title: "Show Your Work",               author: "Austin Kleon",    status: "Finished",     genre: "Creativity",   spineColor: "#5C6B3A", notes: "Share your creative process." },
 ]
 
 function hexToRgb(hex) {
@@ -24,11 +23,11 @@ function hexToRgb(hex) {
     const b = parseInt(hex.slice(5, 7), 16)
     return { r, g, b }
 }
-function lighten(hex, amount) {
-    try { const { r, g, b } = hexToRgb(hex); return `rgb(${Math.min(255, r + amount)},${Math.min(255, g + amount)},${Math.min(255, b + amount)})` } catch { return hex }
+function lighten(hex, a) {
+    try { const { r, g, b } = hexToRgb(hex); return `rgb(${Math.min(255,r+a)},${Math.min(255,g+a)},${Math.min(255,b+a)})` } catch { return hex }
 }
-function darken(hex, amount) {
-    try { const { r, g, b } = hexToRgb(hex); return `rgb(${Math.max(0, r - amount)},${Math.max(0, g - amount)},${Math.max(0, b - amount)})` } catch { return hex }
+function darken(hex, a) {
+    try { const { r, g, b } = hexToRgb(hex); return `rgb(${Math.max(0,r-a)},${Math.max(0,g-a)},${Math.max(0,b-a)})` } catch { return hex }
 }
 
 export function BookShelf({
@@ -38,8 +37,9 @@ export function BookShelf({
     bookAngle    = 58,
     shelfTilt    = 12,
     bookWidth    = 56,
-    bookOverlap  = 18,
-    zDepth       = 28,
+    bookDepth    = 14,
+    bookOverlap  = 20,
+    zDepth       = 30,
     idleDrift    = true,
     previewMode  = false,
     maxBooks     = 0,
@@ -60,122 +60,158 @@ export function BookShelf({
     return (
         <div style={{ width: "100%", height: shelfHeight, position: "relative" }}>
 
-            {/*
-              Perspective wrapper.
-              MUST be overflow:visible — any other overflow value creates a
-              stacking context that flattens transform-style:preserve-3d children.
-            */}
-            <div
-                style={{
-                    perspective: `${perspective}px`,
-                    perspectiveOrigin: "30% 85%",
-                    width: "100%",
-                    height: "100%",
-                    overflow: "visible",
-                }}
-            >
-                {/*
-                  Drag replaces CSS overflow:auto for horizontal scrolling.
-                  overflow:auto on this element would break preserve-3d on children.
-                  framer-motion drag adds translateX without a new stacking context.
-                */}
+            {/* Perspective context — overflow MUST be visible; any other value
+                creates a stacking context that destroys preserve-3d children    */}
+            <div style={{
+                perspective: `${perspective}px`,
+                perspectiveOrigin: "30% 85%",
+                width: "100%",
+                height: "100%",
+                overflow: "visible",
+            }}>
+                {/* Drag for horizontal scroll — avoids overflow:auto which also
+                    breaks preserve-3d. framer drag adds translateX cleanly.     */}
                 <motion.div
                     drag="x"
-                    dragConstraints={{ right: 0, left: -(displayBooks.length * (bookWidth - bookOverlap) + 200) }}
-                    dragElastic={0.08}
+                    dragConstraints={{ right: 0, left: -(displayBooks.length * (bookWidth - bookOverlap) + 300) }}
+                    dragElastic={0.06}
                     whileDrag={{ cursor: "grabbing" }}
                     animate={idleDrift ? { y: [0, -3, 0, 3, 0] } : {}}
                     transition={{ duration: 4, ease: "easeInOut", repeat: Infinity, repeatType: "loop" }}
                     style={{
                         display: "inline-flex",
                         alignItems: "flex-end",
-                        paddingLeft: 40,
+                        paddingLeft: 48,
                         paddingBottom: 8,
                         height: "100%",
                         cursor: "grab",
                         touchAction: "none",
-                        // Shelf tilt — whole row leans back toward horizon
                         rotateX: shelfTilt,
                         transformOrigin: "bottom center",
-                        // preserve-3d propagates rotateX and each book's z/rotateY
                         transformStyle: "preserve-3d",
                     }}
                 >
                     {displayBooks.map((book, i) => {
-                        const color     = book.spineColor || SPINE_COLORS[i % SPINE_COLORS.length]
-                        const height    = SPINE_HEIGHTS[i % SPINE_HEIGHTS.length]
+                        const color      = book.spineColor || SPINE_COLORS[i % SPINE_COLORS.length]
+                        const height     = SPINE_HEIGHTS[i % SPINE_HEIGHTS.length]
                         const isSelected = selectedId === book.id
-                        const baseZ     = i * -zDepth   // each book recedes behind the previous
+                        const baseZ      = i * -zDepth
 
                         return (
                             <motion.div
                                 key={book.id}
                                 onClick={() => handleSelect(book)}
                                 /*
-                                  ALL transform values live in animate — never mix
-                                  style.transform with animate on the same motion.div,
-                                  framer-motion owns the transform property entirely.
+                                  ALL transform values go here — never set style.transform
+                                  alongside animate on the same motion.div; framer-motion
+                                  owns the transform property and would silently drop style.transform
                                 */
-                                initial={{
-                                    rotateY: -bookAngle,
-                                    z: baseZ,
-                                    y: 0,
-                                }}
+                                initial={{ rotateY: -bookAngle, z: baseZ, y: 0 }}
                                 animate={{
-                                    rotateY: isSelected ? 0 : -bookAngle,
-                                    z:       isSelected ? baseZ + 60 : baseZ,
-                                    y:       isSelected ? -16 : 0,
+                                    rotateY: isSelected ? 0      : -bookAngle,
+                                    z:       isSelected ? baseZ + 70 : baseZ,
+                                    y:       isSelected ? -18    : 0,
                                 }}
-                                transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
-                                whileHover={!isSelected ? { y: -10, z: baseZ + 20, transition: { duration: 0.18 } } : {}}
+                                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                                whileHover={!isSelected ? { y: -10, z: baseZ + 22, transition: { duration: 0.18 } } : {}}
                                 style={{
                                     width: bookWidth,
                                     height,
                                     marginLeft: i === 0 ? 0 : -bookOverlap,
                                     flexShrink: 0,
-                                    transformOrigin: "left center",
-                                    transformStyle: "preserve-3d",
                                     cursor: "pointer",
                                     userSelect: "none",
-                                    borderRadius: "3px 3px 2px 2px",
-                                    background: `linear-gradient(160deg, ${lighten(color, 18)} 0%, ${color} 45%, ${darken(color, 10)} 100%)`,
-                                    boxShadow: `
-                                        inset -4px 0 8px rgba(0,0,0,0.4),
-                                        inset 0 2px 0 rgba(255,255,255,0.18),
-                                        6px 14px 32px rgba(0,0,0,0.5)
-                                    `,
                                     position: "relative",
+                                    transformOrigin: "left center",
+                                    // preserve-3d so child face divs live in the same 3D space
+                                    transformStyle: "preserve-3d",
+                                    // drop-shadow respects 3D geometry; box-shadow does not
+                                    filter: "drop-shadow(4px 18px 28px rgba(0,0,0,0.55))",
+                                }}
+                            >
+                                {/* ── SPINE FACE (front) ──────────────────────── */}
+                                <div style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    background: `linear-gradient(
+                                        155deg,
+                                        ${lighten(color, 22)} 0%,
+                                        ${color}             40%,
+                                        ${darken(color, 14)} 100%
+                                    )`,
+                                    borderRadius: "3px 3px 2px 2px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                }}
-                            >
-                                {/* Spine label */}
-                                <span
-                                    style={{
+                                    overflow: "hidden",
+                                }}>
+                                    <span style={{
                                         writingMode: "vertical-rl",
                                         fontSize: 9,
                                         fontVariant: "small-caps",
                                         letterSpacing: 1.5,
-                                        opacity: isSelected ? 0 : 0.55,
+                                        opacity: isSelected ? 0 : 0.6,
                                         color: "#fff",
                                         pointerEvents: "none",
                                         overflow: "hidden",
                                         maxHeight: height - 20,
                                         whiteSpace: "nowrap",
-                                        textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                                        textShadow: "0 1px 4px rgba(0,0,0,0.7)",
                                         transition: "opacity 0.2s",
-                                    }}
-                                >
-                                    {book.title}
-                                </span>
+                                    }}>
+                                        {book.title}
+                                    </span>
+                                </div>
+
+                                {/* ── PAGES FACE (right side — book thickness) ─
+                                    Geometry: child at left=bookWidth, rotateY(90°)
+                                    around its left edge → extends perpendicular
+                                    behind the spine (into -Z).
+                                    In world space at -58° + 90° = 32° from face-on
+                                    → clearly visible to viewer.                   */}
+                                <div style={{
+                                    position: "absolute",
+                                    top: 3,
+                                    left: bookWidth,
+                                    width: bookDepth,
+                                    height: height - 6,
+                                    background: `linear-gradient(
+                                        to right,
+                                        #b8b3ab 0%,
+                                        #ddd9d1 30%,
+                                        #eee9e1 70%,
+                                        #f4f0e8 100%
+                                    )`,
+                                    transformOrigin: "left center",
+                                    transform: "rotateY(90deg)",
+                                    borderRadius: "0 2px 2px 0",
+                                }} />
+
+                                {/* ── TOP CAP (top of book) ───────────────────
+                                    rotateX(-90°) from top edge → face lies in XZ
+                                    plane. Visible as a thin dark strip on top.    */}
+                                <div style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 2,
+                                    width: bookWidth - 4,
+                                    height: bookDepth,
+                                    background: `linear-gradient(
+                                        to bottom,
+                                        ${darken(color, 5)} 0%,
+                                        ${darken(color, 18)} 100%
+                                    )`,
+                                    transformOrigin: "top center",
+                                    transform: "rotateX(-90deg)",
+                                    borderRadius: "2px 2px 0 0",
+                                }} />
                             </motion.div>
                         )
                     })}
                 </motion.div>
             </div>
 
-            {/* Detail panel */}
+            {/* ── Detail panel ───────────────────────────────────────────────── */}
             <AnimatePresence>
                 {selectedBook && (
                     <motion.div
@@ -242,48 +278,16 @@ export function BookShelf({
 }
 
 addPropertyControls(BookShelf, {
-    shelfHeight: {
-        type: ControlType.Number, title: "Shelf Height",
-        defaultValue: 360, min: 200, max: 600, step: 10, unit: "px", displayStepper: true,
-    },
-    perspective: {
-        type: ControlType.Number, title: "Perspective",
-        defaultValue: 900, min: 400, max: 1600, step: 50, unit: "px", displayStepper: true,
-    },
-    bookAngle: {
-        type: ControlType.Number, title: "Book Angle",
-        defaultValue: 58, min: 20, max: 80, step: 1, unit: "°", displayStepper: true,
-    },
-    shelfTilt: {
-        type: ControlType.Number, title: "Shelf Tilt",
-        defaultValue: 12, min: 0, max: 30, step: 1, unit: "°", displayStepper: true,
-    },
-    bookWidth: {
-        type: ControlType.Number, title: "Book Width",
-        defaultValue: 56, min: 28, max: 100, step: 2, unit: "px", displayStepper: true,
-    },
-    bookOverlap: {
-        type: ControlType.Number, title: "Overlap",
-        defaultValue: 18, min: 0, max: 50, step: 1, unit: "px", displayStepper: true,
-    },
-    zDepth: {
-        type: ControlType.Number, title: "Z Depth",
-        defaultValue: 28, min: 5, max: 80, step: 1, unit: "px", displayStepper: true,
-    },
-    idleDrift: {
-        type: ControlType.Boolean, title: "Idle Drift",
-        defaultValue: true, enabledTitle: "On", disabledTitle: "Off",
-    },
-    previewMode: {
-        type: ControlType.Boolean, title: "Preview Mode",
-        defaultValue: false, enabledTitle: "Homepage (link out)", disabledTitle: "Full library",
-    },
-    maxBooks: {
-        type: ControlType.Number, title: "Max Books",
-        defaultValue: 0, min: 0, max: 20, step: 1, displayStepper: true,
-    },
-    previewHref: {
-        type: ControlType.String, title: "Preview Link",
-        defaultValue: "/library", hidden: (props) => !props.previewMode,
-    },
+    shelfHeight: { type: ControlType.Number, title: "Shelf Height",  defaultValue: 360, min: 200, max: 600, step: 10, unit: "px", displayStepper: true },
+    perspective:  { type: ControlType.Number, title: "Perspective",   defaultValue: 900, min: 400, max: 1600, step: 50, unit: "px", displayStepper: true },
+    bookAngle:    { type: ControlType.Number, title: "Book Angle",    defaultValue: 58,  min: 20,  max: 80,   step: 1,  unit: "°",  displayStepper: true },
+    shelfTilt:    { type: ControlType.Number, title: "Shelf Tilt",    defaultValue: 12,  min: 0,   max: 30,   step: 1,  unit: "°",  displayStepper: true },
+    bookWidth:    { type: ControlType.Number, title: "Book Width",    defaultValue: 56,  min: 28,  max: 100,  step: 2,  unit: "px", displayStepper: true },
+    bookDepth:    { type: ControlType.Number, title: "Book Depth",    defaultValue: 14,  min: 4,   max: 40,   step: 1,  unit: "px", displayStepper: true },
+    bookOverlap:  { type: ControlType.Number, title: "Overlap",       defaultValue: 20,  min: 0,   max: 50,   step: 1,  unit: "px", displayStepper: true },
+    zDepth:       { type: ControlType.Number, title: "Z Depth",       defaultValue: 30,  min: 5,   max: 80,   step: 1,  unit: "px", displayStepper: true },
+    idleDrift:    { type: ControlType.Boolean, title: "Idle Drift",   defaultValue: true, enabledTitle: "On", disabledTitle: "Off" },
+    previewMode:  { type: ControlType.Boolean, title: "Preview Mode", defaultValue: false, enabledTitle: "Homepage (link out)", disabledTitle: "Full library" },
+    maxBooks:     { type: ControlType.Number, title: "Max Books",     defaultValue: 0,   min: 0,   max: 20,   step: 1,  displayStepper: true },
+    previewHref:  { type: ControlType.String,  title: "Preview Link", defaultValue: "/library", hidden: (props) => !props.previewMode },
 })

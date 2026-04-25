@@ -18,6 +18,16 @@ const SPINE_COLORS = [
 // ── Height cycle — varied heights simulate real shelf irregularity ──
 const SPINE_HEIGHTS = [220, 195, 240, 180, 215, 200, 235, 190, 210]
 
+// ── Demo books shown in Framer canvas before CMS is connected ──────────────
+const DEMO_BOOKS: Book[] = [
+    { id: "d1", title: "Atomic Habits", author: "James Clear", status: "Finished", genre: "Self-help", spineColor: "#1B2A4A", notes: "Tiny changes, remarkable results." },
+    { id: "d2", title: "The Design of Everyday Things", author: "Don Norman", status: "Finished", genre: "Design", spineColor: "#7B2D3E", notes: "Why design matters." },
+    { id: "d3", title: "Thinking, Fast and Slow", author: "Daniel Kahneman", status: "Reading", genre: "Psychology", spineColor: "#2D5A3D", notes: "Two systems of thinking." },
+    { id: "d4", title: "Deep Work", author: "Cal Newport", status: "Finished", genre: "Productivity", spineColor: "#C9A84C", notes: "Focus is the new IQ." },
+    { id: "d5", title: "Dune", author: "Frank Herbert", status: "Want to Read", genre: "Fiction", spineColor: "#C4704A", notes: "A universe awaits." },
+    { id: "d6", title: "Show Your Work", author: "Austin Kleon", status: "Finished", genre: "Creativity", spineColor: "#5C6B3A", notes: "Share your creative process." },
+]
+
 interface Book {
     id: string
     title: string
@@ -54,7 +64,9 @@ export function BookShelf({
     const dragStart = useRef({ x: 0, scrollLeft: 0 })
     const scrollRef = useRef<HTMLDivElement>(null)
 
-    const displayBooks = maxBooks > 0 ? books.slice(0, maxBooks) : books
+    // Fall back to demo books in the canvas when no CMS data is connected
+    const sourceBooks = books.length > 0 ? books : DEMO_BOOKS
+    const displayBooks = maxBooks > 0 ? sourceBooks.slice(0, maxBooks) : sourceBooks
 
     // ── Drag-to-scroll on desktop ─────────────────────────────────────────────
     const onMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
